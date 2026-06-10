@@ -350,6 +350,7 @@ class GameUI {
         this.game = null;
         this.currentDifficulty = 5;
         this.isMouseDown = false;
+        this.isTouchActive = false;
         this.dragStartRow = null;
         this.dragStartCol = null;
         this.dragColor = null;
@@ -372,6 +373,10 @@ class GameUI {
                 this.startNewGame();
             });
         });
+
+        // Global touch events for proper drag tracking
+        document.addEventListener('touchmove', (e) => this.handleDocumentTouchMove(e), { passive: false });
+        document.addEventListener('touchend', (e) => this.handleDocumentTouchEnd(e));
     }
 
     initializeGame() {
@@ -412,12 +417,9 @@ class GameUI {
                 cell.addEventListener('mousedown', (e) => this.handleCellMouseDown(r, c, e));
                 cell.addEventListener('mouseover', (e) => this.handleCellMouseOver(r, c, e));
                 cell.addEventListener('mouseup', (e) => this.handleCellMouseUp(r, c, e));
-                cell.addEventListener('mouseleave', () => this.handleCellMouseLeave());
 
                 // Touch events for mobile
                 cell.addEventListener('touchstart', (e) => this.handleCellTouchStart(r, c, e));
-                cell.addEventListener('touchmove', (e) => this.handleCellTouchMove(r, c, e));
-                cell.addEventListener('touchend', (e) => this.handleCellTouchEnd(r, c, e));
 
                 board.appendChild(cell);
             }
@@ -456,52 +458,7 @@ class GameUI {
         if (!this.isMouseDown) return;
         
         this.isMouseDown = false;
-        
-        // Check if the selection is valid
-        const cells = Array.from(this.game.selectedCells).map(k => {
-            const [r, c] = k.split(',').map(Number);
-            return { r, c };
-        });
-        
-        if (cells.length > 0) {
-            let minRow = Math.min(...cells.map(c => c.r));
-            let maxRow = Math.max(...cells.map(c => c.r));
-            let minCol = Math.min(...cells.map(c => c.c));
-            let maxCol = Math.max(...cells.map(c => c.c));
-            
-            const height = maxRow - minRow + 1;
-            const width = maxCol - minCol + 1;
-            const area = height * width;
-            
-            // Count numbers in selection
-            let numberCount = 0;
-            let hasMatchingNumber = false;
-            for (let r = minRow; r <= maxRow; r++) {
-                for (let c = minCol; c <= maxCol; c++) {
-                    if (this.game.grid[r][c] > 0) {
-                        numberCount++;
-                        if (this.game.grid[r][c] === area) {
-                            hasMatchingNumber = true;
-                        }
-                    }
-                }
-            }
-            
-            const isValid = hasMatchingNumber && numberCount === 1;
-            
-            if (this.game.completeRectangle(isValid)) {
-                document.getElementById('moves').textContent = this.game.moves;
-                this.updateBoardDisplay();
-
-                if (this.game.isComplete()) {
-                    this.showWinModal();
-                }
-            }
-        }
-    }
-
-    handleCellMouseLeave() {
-        // Optional: clear visual feedback on mouse leave
+        this.completeRectangleFromSelection();
     }
 
     handleCellTouchStart(row, col, e) {
@@ -514,6 +471,7 @@ class GameUI {
             return;
         }
         
+        this.isTouchActive = true;
         this.dragStartRow = row;
         this.dragStartCol = col;
         this.dragColor = this.game.colorPalette[this.game.colorIndex % this.game.colorPalette.length];
@@ -522,17 +480,31 @@ class GameUI {
         this.updateBoardDisplay();
     }
 
-    handleCellTouchMove(row, col, e) {
+    handleDocumentTouchMove(e) {
+        if (!this.isTouchActive) return;
         e.preventDefault();
+
+        const touch = e.touches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
         
-        this.game.clearSelection();
-        this.game.addCellsInRange(this.dragStartRow, this.dragStartCol, row, col);
-        this.updateBoardDisplay();
+        if (element && element.classList.contains('cell')) {
+            const row = parseInt(element.dataset.row);
+            const col = parseInt(element.dataset.col);
+            
+            this.game.clearSelection();
+            this.game.addCellsInRange(this.dragStartRow, this.dragStartCol, row, col);
+            this.updateBoardDisplay();
+        }
     }
 
-    handleCellTouchEnd(row, col, e) {
-        e.preventDefault();
+    handleDocumentTouchEnd(e) {
+        if (!this.isTouchActive) return;
         
+        this.isTouchActive = false;
+        this.completeRectangleFromSelection();
+    }
+
+    completeRectangleFromSelection() {
         // Check if the selection is valid
         const cells = Array.from(this.game.selectedCells).map(k => {
             const [r, c] = k.split(',').map(Number);
@@ -584,6 +556,7 @@ class GameUI {
 
             cell.classList.remove('selected', 'highlighted', 'completed', 'incomplete');
             cell.style.backgroundColor = '';
+            cell.style.opacity = '1'; // Reset opacity
 
             if (this.game.userSolution[row][col] !== -1) {
                 const rectId = this.game.userSolution[row][col];
@@ -603,6 +576,7 @@ class GameUI {
             } else if (this.game.selectedCells.has(key)) {
                 cell.classList.add('selected');
                 cell.style.backgroundColor = this.dragColor || '#667eea';
+                cell.style.opacity = '1';
             }
         });
     }
