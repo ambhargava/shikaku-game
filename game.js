@@ -26,18 +26,29 @@ class ShikakuGame {
     generatePuzzle() {
         // Keep trying until we get a valid puzzle that covers all cells
         let validPuzzle = false;
-        while (!validPuzzle) {
+        let attempts = 0;
+        const maxAttempts = 100;
+        
+        while (!validPuzzle && attempts < maxAttempts) {
+            attempts++;
             this.grid = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(0));
             this.solution = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(-1));
             
             let rectId = 0;
             const placed = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(false));
             
-            // Generate rectangles
+            // Generate rectangles - try to minimize 1x1s
             for (let i = 0; i < this.gridSize; i++) {
                 for (let j = 0; j < this.gridSize; j++) {
                     if (!placed[i][j]) {
-                        const rect = this.generateRandomRectangle(i, j, placed);
+                        // Try larger rectangles first, then fallback to smaller ones
+                        let rect = null;
+                        
+                        // Try 2x2, 2x3, 3x2, etc. first
+                        for (let sizeAttempt = 0; sizeAttempt < 3 && !rect; sizeAttempt++) {
+                            rect = this.generateRandomRectangle(i, j, placed, sizeAttempt);
+                        }
+                        
                         if (rect) {
                             const { row, col, height, width } = rect;
                             const area = height * width;
@@ -68,12 +79,32 @@ class ShikakuGame {
         this.userSolution = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(-1));
     }
 
-    generateRandomRectangle(startRow, startCol, placed) {
+    generateRandomRectangle(startRow, startCol, placed, sizeAttempt = 0) {
         const maxWidth = Math.min(4, this.gridSize - startCol);
         const maxHeight = Math.min(4, this.gridSize - startRow);
         
-        const width = Math.floor(Math.random() * (maxWidth - 1)) + 1;
-        const height = Math.floor(Math.random() * (maxHeight - 1)) + 1;
+        let width, height;
+        
+        if (sizeAttempt === 0) {
+            // First attempt: prefer 2x2 or larger
+            width = Math.floor(Math.random() * (maxWidth - 1)) + 2;
+            height = Math.floor(Math.random() * (maxHeight - 1)) + 2;
+        } else if (sizeAttempt === 1) {
+            // Second attempt: allow 2x1, 1x2 or 2x2
+            width = Math.floor(Math.random() * maxWidth) + 1;
+            height = Math.floor(Math.random() * maxHeight) + 1;
+            
+            // Avoid 1x1 by retrying if we get it
+            if (width === 1 && height === 1) return null;
+        } else {
+            // Last resort: allow any size including 1x1
+            width = Math.floor(Math.random() * maxWidth) + 1;
+            height = Math.floor(Math.random() * maxHeight) + 1;
+        }
+        
+        // Ensure dimensions are valid
+        width = Math.max(1, Math.min(width, maxWidth));
+        height = Math.max(1, Math.min(height, maxHeight));
         
         // Check if rectangle can be placed
         for (let r = startRow; r < Math.min(startRow + height, this.gridSize); r++) {
