@@ -13,10 +13,10 @@ class ShikakuGame {
         this.selectedCells = new Set();
         this.completedRectangles = new Set();
         this.colorPalette = [
-            '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
-            '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B88B', '#A9DFBF',
-            '#F1948A', '#85C1E2', '#F7DC6F', '#D7BDE2', '#82E0AA',
-            '#FAD7A0', '#A9DFBF', '#F8B88B', '#D5F4E6', '#FADBD8'
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFD93D', '#6BCB77',
+            '#BB8FCE', '#FF8C42', '#A8E6CF', '#FF6B9D', '#C7CEEA',
+            '#FFDAB9', '#FF6348', '#20B2AA', '#FFD700', '#DDA0DD',
+            '#87CEEB', '#FF4500', '#32CD32', '#FF69B4', '#00CED1'
         ];
         this.colorIndex = 0;
         
@@ -257,13 +257,32 @@ class ShikakuGame {
     }
 
     isComplete() {
+        // Check that all cells have been assigned to a rectangle
         for (let r = 0; r < this.gridSize; r++) {
             for (let c = 0; c < this.gridSize; c++) {
-                if (this.userSolution[r][c] === -1) return false;
+                if (this.userSolution[r][c] === -1) {
+                    return false; // Found an unassigned cell
+                }
             }
         }
-        // Also check that all rectangles are completed (not just filled)
-        return this.completedRectangles.size === Math.max(...Array.from(this.userSolution).flat(), -1) + 1;
+        
+        // Check that all rectangles are marked as completed (not just filled)
+        // Count total unique rectangles
+        const uniqueRectIds = new Set();
+        for (let r = 0; r < this.gridSize; r++) {
+            for (let c = 0; c < this.gridSize; c++) {
+                if (this.userSolution[r][c] !== -1) {
+                    uniqueRectIds.add(this.userSolution[r][c]);
+                }
+            }
+        }
+        
+        // All rectangles must be completed
+        if (this.completedRectangles.size !== uniqueRectIds.size) {
+            return false;
+        }
+        
+        return true;
     }
 
     showError() {
