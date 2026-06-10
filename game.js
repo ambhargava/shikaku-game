@@ -288,31 +288,79 @@ class ShikakuGame {
     }
 
     isComplete() {
-        // Check that all cells have been assigned to a rectangle
+        // Deterministic validation of user rectangles
+        // 1) Ensure every cell has been assigned
         for (let r = 0; r < this.gridSize; r++) {
             for (let c = 0; c < this.gridSize; c++) {
-                if (this.userSolution[r][c] === -1) {
-                    return false; // Found an unassigned cell
-                }
+                if (this.userSolution[r][c] === -1) return false;
             }
         }
-        
-        // Check that all rectangles are marked as completed (not just filled)
-        // Count total unique rectangles
-        const uniqueRectIds = new Set();
+
+        // 2) Group cells by rectId
+        const groups = {};
         for (let r = 0; r < this.gridSize; r++) {
             for (let c = 0; c < this.gridSize; c++) {
-                if (this.userSolution[r][c] !== -1) {
-                    uniqueRectIds.add(this.userSolution[r][c]);
-                }
+                const id = this.userSolution[r][c];
+                if (!groups[id]) groups[id] = [];
+                groups[id].push([r, c]);
             }
         }
-        
-        // All rectangles must be completed
-        if (this.completedRectangles.size !== uniqueRectIds.size) {
-            return false;
+
+        // 3) Validate each group: must form a bounding rectangle and contain exactly one number equal to area
+        for (const idStr in groups) {
+            const id = parseInt(idStr, 10);
+            const cells = groups[idStr];
+
+            let minR = Infinity, maxR = -Infinity, minC = Infinity, maxC = -Infinity;
+            for (const [r, c] of cells) {
+                minR = Math.min(minR, r);
+                maxR = Math.max(maxR, r);
+                minC = Math.min(minC, c);
+                maxC = Math.max(maxC, c);
+            }
+
+            // Check bounding box
+            const height = maxR - minR + 1;
+            const width = maxC - minC + 1;
+            const area = height * width;
+
+            // Ensure every cell inside bounding box belongs to this rectId
+            let boundingOk = true;
+            for (let r = minR; r <= maxR; r++) {
+                for (let c = minC; c <= maxC; c++) {
+                    if (this.userSolution[r][c] !== id) {
+                        boundingOk = false;
+                        break;
+                    }
+                }
+                if (!boundingOk) break;
+            }
+
+            if (!boundingOk) {
+                // group is not a proper rectangle
+                return false;
+            }
+
+            // Count numbered cells inside bounding box and verify value
+            let numberCount = 0;
+            let numberValue = null;
+            for (let r = minR; r <= maxR; r++) {
+                for (let c = minC; c <= maxC; c++) {
+                    if (this.grid[r][c] > 0) {
+                        numberCount++;
+                        numberValue = this.grid[r][c];
+                        if (numberCount > 1) break;
+                    }
+                }
+                if (numberCount > 1) break;
+            }
+
+            if (!(numberCount === 1 && numberValue === area)) {
+                // This rectangle is invalid/incomplete
+                return false;
+            }
         }
-        
+
         return true;
     }
 
