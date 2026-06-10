@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <title>Shikaku Puzzle Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Shikaku Puzzle</h1>
+            <div class="stats">
+                <div class="stat">
+                    <span class="label">Time:</span>
+                    <span id="timer">0:00</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Moves:</span>
+                    <span id="moves">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div id="gameBoard" class="game-board"></div>
+
+            <div class="controls">
+                <button id="newGameBtn" class="btn btn-primary">New Game</button>
+                <button id="undoBtn" class="btn btn-secondary">Undo</button>
+                <button id="hintBtn" class="btn btn-secondary">Hint</button>
+                <button id="resetBtn" class="btn btn-secondary">Reset</button>
+            </div>
+
+            <div id="difficultySelector" class="difficulty-selector">
+                <h3>Select Difficulty:</h3>
+                <button class="difficulty-btn" data-size="4">Easy (4×4)</button>
+                <button class="difficulty-btn active" data-size="5">Normal (5×5)</button>
+                <button class="difficulty-btn" data-size="6">Hard (6×6)</button>
+            </div>
+
+            <div id="modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2 id="modalTitle">Congratulations!</h2>
+                    <p id="modalMessage">You solved the puzzle!</p>
+                    <div id="modalStats"></div>
+                    <button id="modalBtn" class="btn btn-primary">Play Again</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Divide the grid into rectangles. Each number shows the area of its rectangle.</p>
+        </footer>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
