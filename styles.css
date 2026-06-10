@@ -89,8 +89,8 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    font-size: 16px;
+    font-weight: 800; /* increased weight for better readability */
+    font-size: 20px; /* increased size for easier reading */
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -323,7 +323,7 @@ footer {
     }
 
     .cell {
-        font-size: 14px;
+        font-size: 18px; /* larger on mobile for readability */
     }
 
     .btn {
