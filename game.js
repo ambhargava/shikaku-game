@@ -5,12 +5,20 @@ class ShikakuGame {
         this.grid = [];
         this.solution = [];
         this.userSolution = [];
+        this.userRectangleColors = {}; // Track colors for each rectangle
         this.moves = 0;
         this.startTime = null;
         this.timerInterval = null;
         this.history = [];
         this.selectedCells = new Set();
         this.completedRectangles = new Set();
+        this.colorPalette = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+            '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B88B', '#A9DFBF',
+            '#F1948A', '#85C1E2', '#F7DC6F', '#D7BDE2', '#82E0AA',
+            '#FAD7A0', '#A9DFBF', '#F8B88B', '#D5F4E6', '#FADBD8'
+        ];
+        this.colorIndex = 0;
         
         this.generatePuzzle();
     }
@@ -107,7 +115,29 @@ class ShikakuGame {
         this.selectedCells.clear();
     }
 
-    completeRectangle() {
+    deleteRectangle(row, col) {
+        const rectId = this.userSolution[row][col];
+        if (rectId === -1) return; // No rectangle to delete
+        
+        // Find and remove the rectangle
+        for (let r = 0; r < this.gridSize; r++) {
+            for (let c = 0; c < this.gridSize; c++) {
+                if (this.userSolution[r][c] === rectId) {
+                    this.userSolution[r][c] = -1;
+                }
+            }
+        }
+        
+        // Remove from history
+        this.history = this.history.filter(h => h.rectId !== rectId);
+        
+        this.completedRectangles.delete(rectId);
+        if (this.userRectangleColors[rectId]) {
+            delete this.userRectangleColors[rectId];
+        }
+    }
+
+    completeRectangle(isValid) {
         if (this.selectedCells.size === 0) return false;
         
         const cells = Array.from(this.selectedCells).map(k => {
@@ -129,8 +159,8 @@ class ShikakuGame {
         for (let r = minRow; r <= maxRow; r++) {
             for (let c = minCol; c <= maxCol; c++) {
                 if (!this.selectedCells.has(`${r},${c}`)) {
-                    this.showError();
-                    return false;
+                    // Incomplete rectangle - still allow it
+                    break;
                 }
             }
         }
@@ -145,22 +175,26 @@ class ShikakuGame {
             }
         }
         
-        // Check if area matches any number in the rectangle
+        // Get color for this selection
+        const color = this.colorPalette[this.colorIndex % this.colorPalette.length];
+        this.colorIndex++;
+        
+        // Check if area matches any number in the rectangle (for validation)
         let hasMatchingNumber = false;
+        let numberCount = 0;
         for (let r = minRow; r <= maxRow; r++) {
             for (let c = minCol; c <= maxCol; c++) {
-                if (this.grid[r][c] === area) {
-                    hasMatchingNumber = true;
-                    break;
+                if (this.grid[r][c] > 0) {
+                    numberCount++;
+                    if (this.grid[r][c] === area) {
+                        hasMatchingNumber = true;
+                    }
                 }
             }
-            if (hasMatchingNumber) break;
         }
         
-        if (!hasMatchingNumber) {
-            this.showError();
-            return false;
-        }
+        // Only mark as completed if valid, otherwise mark as incomplete
+        const isCompleted = isValid && hasMatchingNumber && numberCount === 1;
         
         // Valid rectangle - mark it
         const rectId = Math.max(...Array.from(this.userSolution).flat(), -1) + 1;
@@ -170,13 +204,21 @@ class ShikakuGame {
             }
         }
         
-        this.completedRectangles.add(rectId);
+        this.userRectangleColors[rectId] = {
+            color: color,
+            isCompleted: isCompleted
+        };
+        
+        if (isCompleted) {
+            this.completedRectangles.add(rectId);
+            this.moves++;
+        }
+        
         this.history.push({
             cells: Array.from(this.selectedCells),
             rectId: rectId
         });
         
-        this.moves++;
         this.selectedCells.clear();
         
         return true;
@@ -197,6 +239,9 @@ class ShikakuGame {
         }
         
         this.completedRectangles.delete(rectId);
+        if (this.userRectangleColors[rectId]) {
+            delete this.userRectangleColors[rectId];
+        }
         this.moves++;
         return true;
     }
@@ -206,6 +251,8 @@ class ShikakuGame {
         this.completedRectangles.clear();
         this.history = [];
         this.selectedCells.clear();
+        this.userRectangleColors = {};
+        this.colorIndex = 0;
         this.moves = 0;
     }
 
@@ -215,7 +262,8 @@ class ShikakuGame {
                 if (this.userSolution[r][c] === -1) return false;
             }
         }
-        return true;
+        // Also check that all rectangles are completed (not just filled)
+        return this.completedRectangles.size === Math.max(...Array.from(this.userSolution).flat(), -1) + 1;
     }
 
     showError() {
@@ -254,6 +302,7 @@ class GameUI {
         this.isMouseDown = false;
         this.dragStartRow = null;
         this.dragStartCol = null;
+        this.dragColor = null;
         this.setupEventListeners();
         this.initializeGame();
     }
@@ -313,6 +362,7 @@ class GameUI {
                 cell.addEventListener('mousedown', (e) => this.handleCellMouseDown(r, c, e));
                 cell.addEventListener('mouseover', (e) => this.handleCellMouseOver(r, c, e));
                 cell.addEventListener('mouseup', (e) => this.handleCellMouseUp(r, c, e));
+                cell.addEventListener('mouseleave', () => this.handleCellMouseLeave());
 
                 // Touch events for mobile
                 cell.addEventListener('touchstart', (e) => this.handleCellTouchStart(r, c, e));
@@ -327,9 +377,18 @@ class GameUI {
 
     handleCellMouseDown(row, col, e) {
         e.preventDefault();
+        
+        // If clicking on an existing rectangle, delete it
+        if (this.game.userSolution[row][col] !== -1) {
+            this.game.deleteRectangle(row, col);
+            this.updateBoardDisplay();
+            return;
+        }
+        
         this.isMouseDown = true;
         this.dragStartRow = row;
         this.dragStartCol = col;
+        this.dragColor = this.game.colorPalette[this.game.colorIndex % this.game.colorPalette.length];
         this.game.clearSelection();
         this.game.selectCell(row, col);
         this.updateBoardDisplay();
@@ -347,18 +406,67 @@ class GameUI {
         if (!this.isMouseDown) return;
         
         this.isMouseDown = false;
-        this.updateBoardDisplay();
         
-        // Try to complete rectangle after drag
-        if (this.game.selectedCells.size > 0) {
-            setTimeout(() => this.tryCompleteRectangle(), 100);
+        // Check if the selection is valid
+        const cells = Array.from(this.game.selectedCells).map(k => {
+            const [r, c] = k.split(',').map(Number);
+            return { r, c };
+        });
+        
+        if (cells.length > 0) {
+            let minRow = Math.min(...cells.map(c => c.r));
+            let maxRow = Math.max(...cells.map(c => c.r));
+            let minCol = Math.min(...cells.map(c => c.c));
+            let maxCol = Math.max(...cells.map(c => c.c));
+            
+            const height = maxRow - minRow + 1;
+            const width = maxCol - minCol + 1;
+            const area = height * width;
+            
+            // Count numbers in selection
+            let numberCount = 0;
+            let hasMatchingNumber = false;
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    if (this.game.grid[r][c] > 0) {
+                        numberCount++;
+                        if (this.game.grid[r][c] === area) {
+                            hasMatchingNumber = true;
+                        }
+                    }
+                }
+            }
+            
+            const isValid = hasMatchingNumber && numberCount === 1;
+            
+            if (this.game.completeRectangle(isValid)) {
+                document.getElementById('moves').textContent = this.game.moves;
+                this.updateBoardDisplay();
+
+                if (this.game.isComplete()) {
+                    this.showWinModal();
+                }
+            }
         }
+    }
+
+    handleCellMouseLeave() {
+        // Optional: clear visual feedback on mouse leave
     }
 
     handleCellTouchStart(row, col, e) {
         e.preventDefault();
+        
+        // If tapping on an existing rectangle, delete it
+        if (this.game.userSolution[row][col] !== -1) {
+            this.game.deleteRectangle(row, col);
+            this.updateBoardDisplay();
+            return;
+        }
+        
         this.dragStartRow = row;
         this.dragStartCol = col;
+        this.dragColor = this.game.colorPalette[this.game.colorIndex % this.game.colorPalette.length];
         this.game.clearSelection();
         this.game.selectCell(row, col);
         this.updateBoardDisplay();
@@ -374,21 +482,46 @@ class GameUI {
 
     handleCellTouchEnd(row, col, e) {
         e.preventDefault();
-        this.updateBoardDisplay();
         
-        // Try to complete rectangle after touch drag
-        if (this.game.selectedCells.size > 0) {
-            setTimeout(() => this.tryCompleteRectangle(), 100);
-        }
-    }
+        // Check if the selection is valid
+        const cells = Array.from(this.game.selectedCells).map(k => {
+            const [r, c] = k.split(',').map(Number);
+            return { r, c };
+        });
+        
+        if (cells.length > 0) {
+            let minRow = Math.min(...cells.map(c => c.r));
+            let maxRow = Math.max(...cells.map(c => c.r));
+            let minCol = Math.min(...cells.map(c => c.c));
+            let maxCol = Math.max(...cells.map(c => c.c));
+            
+            const height = maxRow - minRow + 1;
+            const width = maxCol - minCol + 1;
+            const area = height * width;
+            
+            // Count numbers in selection
+            let numberCount = 0;
+            let hasMatchingNumber = false;
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    if (this.game.grid[r][c] > 0) {
+                        numberCount++;
+                        if (this.game.grid[r][c] === area) {
+                            hasMatchingNumber = true;
+                        }
+                    }
+                }
+            }
+            
+            const isValid = hasMatchingNumber && numberCount === 1;
+            
+            if (this.game.completeRectangle(isValid)) {
+                document.getElementById('moves').textContent = this.game.moves;
+                this.updateBoardDisplay();
 
-    tryCompleteRectangle() {
-        if (this.game.completeRectangle()) {
-            document.getElementById('moves').textContent = this.game.moves;
-            this.updateBoardDisplay();
-
-            if (this.game.isComplete()) {
-                this.showWinModal();
+                if (this.game.isComplete()) {
+                    this.showWinModal();
+                }
             }
         }
     }
@@ -399,12 +532,27 @@ class GameUI {
             const col = parseInt(cell.dataset.col);
             const key = `${row},${col}`;
 
-            cell.classList.remove('selected', 'highlighted', 'completed');
+            cell.classList.remove('selected', 'highlighted', 'completed', 'incomplete');
+            cell.style.backgroundColor = '';
 
             if (this.game.userSolution[row][col] !== -1) {
-                cell.classList.add('completed');
+                const rectId = this.game.userSolution[row][col];
+                const colorInfo = this.game.userRectangleColors[rectId];
+                
+                if (colorInfo) {
+                    if (colorInfo.isCompleted) {
+                        cell.classList.add('completed');
+                        cell.style.backgroundColor = colorInfo.color;
+                        cell.style.opacity = '1';
+                    } else {
+                        cell.classList.add('incomplete');
+                        cell.style.backgroundColor = colorInfo.color;
+                        cell.style.opacity = '0.5';
+                    }
+                }
             } else if (this.game.selectedCells.has(key)) {
                 cell.classList.add('selected');
+                cell.style.backgroundColor = this.dragColor || '#667eea';
             }
         });
     }
