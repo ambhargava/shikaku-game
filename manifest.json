@@ -1,0 +1,19 @@
+{
+  "name": "Shikaku Puzzle Game",
+  "short_name": "Shikaku",
+  "description": "A logic puzzle game where you divide grids into rectangles",
+  "start_url": "/shikaku-game/",
+  "scope": "/shikaku-game/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23667eea' width='192' height='192'/><text x='50%' y='50%' font-size='80' fill='white' text-anchor='middle' dominant-baseline='central' font-weight='bold'>S</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
