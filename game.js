@@ -16,41 +16,48 @@ class ShikakuGame {
     }
 
     generatePuzzle() {
-        // Initialize grid with numbers
-        this.grid = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(0));
-        this.solution = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(-1));
-        this.userSolution = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(-1));
-        
-        let rectId = 0;
-        const placed = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(false));
-        
-        // Generate random rectangles with their numbers
-        for (let i = 0; i < this.gridSize; i++) {
-            for (let j = 0; j < this.gridSize; j++) {
-                if (!placed[i][j]) {
-                    const rect = this.generateRandomRectangle(i, j, placed);
-                    if (rect) {
-                        const { row, col, height, width } = rect;
-                        const area = height * width;
-                        
-                        // Place the area number randomly within the rectangle
-                        const numberRow = row + Math.floor(Math.random() * height);
-                        const numberCol = col + Math.floor(Math.random() * width);
-                        
-                        this.grid[numberRow][numberCol] = area;
-                        
-                        // Mark solution
-                        for (let r = row; r < row + height; r++) {
-                            for (let c = col; c < col + width; c++) {
-                                this.solution[r][c] = rectId;
-                                placed[r][c] = true;
+        // Keep trying until we get a valid puzzle that covers all cells
+        let validPuzzle = false;
+        while (!validPuzzle) {
+            this.grid = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(0));
+            this.solution = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(-1));
+            
+            let rectId = 0;
+            const placed = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(false));
+            
+            // Generate rectangles
+            for (let i = 0; i < this.gridSize; i++) {
+                for (let j = 0; j < this.gridSize; j++) {
+                    if (!placed[i][j]) {
+                        const rect = this.generateRandomRectangle(i, j, placed);
+                        if (rect) {
+                            const { row, col, height, width } = rect;
+                            const area = height * width;
+                            
+                            // Place the area number randomly within the rectangle
+                            const numberRow = row + Math.floor(Math.random() * height);
+                            const numberCol = col + Math.floor(Math.random() * width);
+                            
+                            this.grid[numberRow][numberCol] = area;
+                            
+                            // Mark solution
+                            for (let r = row; r < row + height; r++) {
+                                for (let c = col; c < col + width; c++) {
+                                    this.solution[r][c] = rectId;
+                                    placed[r][c] = true;
+                                }
                             }
+                            rectId++;
                         }
-                        rectId++;
                     }
                 }
             }
+            
+            // Check if all cells are covered
+            validPuzzle = placed.every(row => row.every(cell => cell === true));
         }
+        
+        this.userSolution = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(-1));
     }
 
     generateRandomRectangle(startRow, startCol, placed) {
@@ -81,32 +88,23 @@ class ShikakuGame {
         } else {
             this.selectedCells.add(key);
         }
-        this.updateHighlighting();
+    }
+
+    addCellsInRange(startRow, startCol, endRow, endCol) {
+        const minRow = Math.min(startRow, endRow);
+        const maxRow = Math.max(startRow, endRow);
+        const minCol = Math.min(startCol, endCol);
+        const maxCol = Math.max(startCol, endCol);
+        
+        for (let r = minRow; r <= maxRow; r++) {
+            for (let c = minCol; c <= maxCol; c++) {
+                this.selectedCells.add(`${r},${c}`);
+            }
+        }
     }
 
     clearSelection() {
         this.selectedCells.clear();
-    }
-
-    updateHighlighting() {
-        // When cells are selected, highlight cells that would be in the same rectangle
-        const cells = Array.from(this.selectedCells).map(k => {
-            const [r, c] = k.split(',').map(Number);
-            return { r, c };
-        });
-        
-        if (cells.length === 0) return;
-        
-        // Find bounding box
-        let minRow = Math.min(...cells.map(c => c.r));
-        let maxRow = Math.max(...cells.map(c => c.r));
-        let minCol = Math.min(...cells.map(c => c.c));
-        let maxCol = Math.max(...cells.map(c => c.c));
-        
-        // Only allow rectangles (contiguous rows and columns)
-        if (maxRow - minRow < this.gridSize && maxCol - minCol < this.gridSize) {
-            // Valid potential rectangle
-        }
     }
 
     completeRectangle() {
@@ -253,6 +251,9 @@ class GameUI {
     constructor() {
         this.game = null;
         this.currentDifficulty = 5;
+        this.isMouseDown = false;
+        this.dragStartRow = null;
+        this.dragStartCol = null;
         this.setupEventListeners();
         this.initializeGame();
     }
@@ -308,24 +309,76 @@ class GameUI {
                     cell.textContent = number;
                 }
 
-                cell.addEventListener('click', () => this.handleCellClick(r, c, cell));
+                // Mouse events for desktop drag selection
+                cell.addEventListener('mousedown', (e) => this.handleCellMouseDown(r, c, e));
+                cell.addEventListener('mouseover', (e) => this.handleCellMouseOver(r, c, e));
+                cell.addEventListener('mouseup', (e) => this.handleCellMouseUp(r, c, e));
+
+                // Touch events for mobile
+                cell.addEventListener('touchstart', (e) => this.handleCellTouchStart(r, c, e));
+                cell.addEventListener('touchmove', (e) => this.handleCellTouchMove(r, c, e));
+                cell.addEventListener('touchend', (e) => this.handleCellTouchEnd(r, c, e));
+
                 board.appendChild(cell);
             }
         }
         this.updateBoardDisplay();
     }
 
-    handleCellClick(row, col, cellElement) {
+    handleCellMouseDown(row, col, e) {
+        e.preventDefault();
+        this.isMouseDown = true;
+        this.dragStartRow = row;
+        this.dragStartCol = col;
+        this.game.clearSelection();
         this.game.selectCell(row, col);
         this.updateBoardDisplay();
+    }
 
-        // On double-click or if enough cells selected, try to complete rectangle
+    handleCellMouseOver(row, col, e) {
+        if (!this.isMouseDown) return;
+        
+        this.game.clearSelection();
+        this.game.addCellsInRange(this.dragStartRow, this.dragStartCol, row, col);
+        this.updateBoardDisplay();
+    }
+
+    handleCellMouseUp(row, col, e) {
+        if (!this.isMouseDown) return;
+        
+        this.isMouseDown = false;
+        this.updateBoardDisplay();
+        
+        // Try to complete rectangle after drag
         if (this.game.selectedCells.size > 0) {
-            setTimeout(() => {
-                if (this.game.selectedCells.size > 0) {
-                    this.tryCompleteRectangle();
-                }
-            }, 200);
+            setTimeout(() => this.tryCompleteRectangle(), 100);
+        }
+    }
+
+    handleCellTouchStart(row, col, e) {
+        e.preventDefault();
+        this.dragStartRow = row;
+        this.dragStartCol = col;
+        this.game.clearSelection();
+        this.game.selectCell(row, col);
+        this.updateBoardDisplay();
+    }
+
+    handleCellTouchMove(row, col, e) {
+        e.preventDefault();
+        
+        this.game.clearSelection();
+        this.game.addCellsInRange(this.dragStartRow, this.dragStartCol, row, col);
+        this.updateBoardDisplay();
+    }
+
+    handleCellTouchEnd(row, col, e) {
+        e.preventDefault();
+        this.updateBoardDisplay();
+        
+        // Try to complete rectangle after touch drag
+        if (this.game.selectedCells.size > 0) {
+            setTimeout(() => this.tryCompleteRectangle(), 100);
         }
     }
 
