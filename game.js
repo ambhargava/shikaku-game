@@ -271,28 +271,6 @@ class ShikakuGame {
         return true;
     }
 
-    undo() {
-        if (this.history.length === 0) return false;
-        
-        const last = this.history.pop();
-        const rectId = last.rectId;
-        
-        for (let r = 0; r < this.gridSize; r++) {
-            for (let c = 0; c < this.gridSize; c++) {
-                if (this.userSolution[r][c] === rectId) {
-                    this.userSolution[r][c] = -1;
-                }
-            }
-        }
-        
-        this.completedRectangles.delete(rectId);
-        if (this.userRectangleColors[rectId]) {
-            delete this.userRectangleColors[rectId];
-        }
-        this.moves++;
-        return true;
-    }
-
     reset() {
         this.userSolution = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(-1));
         this.completedRectangles.clear();
@@ -447,7 +425,6 @@ class GameUI {
 
     setupEventListeners() {
         document.getElementById('newGameBtn').addEventListener('click', () => this.startNewGame());
-        document.getElementById('undoBtn').addEventListener('click', () => this.undo());
         document.getElementById('hintBtn').addEventListener('click', () => this.showHint());
         document.getElementById('helpBtn').addEventListener('click', () => this.showTutorial());
         document.getElementById('resetBtn').addEventListener('click', () => this.resetGame());
@@ -674,13 +651,6 @@ class GameUI {
                 cell.style.opacity = '1';
             }
         });
-    }
-
-    undo() {
-        if (this.game.undo()) {
-            document.getElementById('moves').textContent = this.game.moves;
-            this.updateBoardDisplay();
-        }
     }
 
     resetGame() {
