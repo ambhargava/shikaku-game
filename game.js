@@ -5,7 +5,7 @@ class ShikakuGame {
         this.grid = [];
         this.solution = [];
         this.userSolution = [];
-        this.userRectangleColors = {}; // Track colors for each rectangle
+        this.userRectangleColors = {};
         this.moves = 0;
         this.startTime = null;
         this.timerInterval = null;
@@ -24,7 +24,6 @@ class ShikakuGame {
     }
 
     generatePuzzle() {
-        // Keep trying until we get a valid puzzle that covers all cells
         let validPuzzle = false;
         let attempts = 0;
         const maxAttempts = 100;
@@ -37,14 +36,11 @@ class ShikakuGame {
             let rectId = 0;
             const placed = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(false));
             
-            // Generate rectangles - try to minimize 1x1s
             for (let i = 0; i < this.gridSize; i++) {
                 for (let j = 0; j < this.gridSize; j++) {
                     if (!placed[i][j]) {
-                        // Try larger rectangles first, then fallback to smaller ones
                         let rect = null;
                         
-                        // Try 2x2, 2x3, 3x2, etc. first
                         for (let sizeAttempt = 0; sizeAttempt < 3 && !rect; sizeAttempt++) {
                             rect = this.generateRandomRectangle(i, j, placed, sizeAttempt);
                         }
@@ -53,13 +49,11 @@ class ShikakuGame {
                             const { row, col, height, width } = rect;
                             const area = height * width;
                             
-                            // Place the area number randomly within the rectangle
                             const numberRow = row + Math.floor(Math.random() * height);
                             const numberCol = col + Math.floor(Math.random() * width);
                             
                             this.grid[numberRow][numberCol] = area;
                             
-                            // Mark solution
                             for (let r = row; r < row + height; r++) {
                                 for (let c = col; c < col + width; c++) {
                                     this.solution[r][c] = rectId;
@@ -72,7 +66,6 @@ class ShikakuGame {
                 }
             }
             
-            // Check if all cells are covered
             validPuzzle = placed.every(row => row.every(cell => cell === true));
         }
         
@@ -86,27 +79,21 @@ class ShikakuGame {
         let width, height;
         
         if (sizeAttempt === 0) {
-            // First attempt: prefer 2x2 or larger
             width = Math.floor(Math.random() * (maxWidth - 1)) + 2;
             height = Math.floor(Math.random() * (maxHeight - 1)) + 2;
         } else if (sizeAttempt === 1) {
-            // Second attempt: allow 2x1, 1x2 or 2x2
             width = Math.floor(Math.random() * maxWidth) + 1;
             height = Math.floor(Math.random() * maxHeight) + 1;
             
-            // Avoid 1x1 by retrying if we get it
             if (width === 1 && height === 1) return null;
         } else {
-            // Last resort: allow any size including 1x1
             width = Math.floor(Math.random() * maxWidth) + 1;
             height = Math.floor(Math.random() * maxHeight) + 1;
         }
         
-        // Ensure dimensions are valid
         width = Math.max(1, Math.min(width, maxWidth));
         height = Math.max(1, Math.min(height, maxHeight));
         
-        // Check if rectangle can be placed
         for (let r = startRow; r < Math.min(startRow + height, this.gridSize); r++) {
             for (let c = startCol; c < Math.min(startCol + width, this.gridSize); c++) {
                 if (placed[r][c]) return null;
@@ -148,9 +135,8 @@ class ShikakuGame {
 
     deleteRectangle(row, col) {
         const rectId = this.userSolution[row][col];
-        if (rectId === -1) return; // No rectangle to delete
+        if (rectId === -1) return;
         
-        // Find and remove the rectangle
         for (let r = 0; r < this.gridSize; r++) {
             for (let c = 0; c < this.gridSize; c++) {
                 if (this.userSolution[r][c] === rectId) {
@@ -159,7 +145,6 @@ class ShikakuGame {
             }
         }
         
-        // Remove from history
         this.history = this.history.filter(h => h.rectId !== rectId);
         
         this.completedRectangles.delete(rectId);
@@ -176,7 +161,6 @@ class ShikakuGame {
             return { r, c };
         });
         
-        // Find bounding rectangle
         let minRow = Math.min(...cells.map(c => c.r));
         let maxRow = Math.max(...cells.map(c => c.r));
         let minCol = Math.min(...cells.map(c => c.c));
@@ -186,17 +170,14 @@ class ShikakuGame {
         const width = maxCol - minCol + 1;
         const area = height * width;
         
-        // Check if all cells in rectangle are selected
         for (let r = minRow; r <= maxRow; r++) {
             for (let c = minCol; c <= maxCol; c++) {
                 if (!this.selectedCells.has(`${r},${c}`)) {
-                    // Incomplete rectangle - still allow it
                     break;
                 }
             }
         }
         
-        // Check if rectangle overlaps with existing
         for (let r = minRow; r <= maxRow; r++) {
             for (let c = minCol; c <= maxCol; c++) {
                 if (this.userSolution[r][c] !== -1) {
@@ -206,11 +187,9 @@ class ShikakuGame {
             }
         }
         
-        // Get color for this selection
         const color = this.colorPalette[this.colorIndex % this.colorPalette.length];
         this.colorIndex++;
         
-        // Check if area matches any number in the rectangle (for validation)
         let hasMatchingNumber = false;
         let numberCount = 0;
         let numberValue = null;
@@ -226,7 +205,6 @@ class ShikakuGame {
             }
         }
         
-        // Show specific error messages
         if (numberCount === 0) {
             this.showError("This rectangle has no number!");
             return false;
@@ -240,10 +218,8 @@ class ShikakuGame {
             return false;
         }
         
-        // Only mark as completed if valid, otherwise mark as incomplete
         const isCompleted = isValid && hasMatchingNumber && numberCount === 1;
         
-        // Valid rectangle - mark it
         const rectId = Math.max(...Array.from(this.userSolution).flat(), -1) + 1;
         for (let r = minRow; r <= maxRow; r++) {
             for (let c = minCol; c <= maxCol; c++) {
@@ -282,15 +258,12 @@ class ShikakuGame {
     }
 
     isComplete() {
-        // Deterministic validation of user rectangles
-        // 1) Ensure every cell has been assigned
         for (let r = 0; r < this.gridSize; r++) {
             for (let c = 0; c < this.gridSize; c++) {
                 if (this.userSolution[r][c] === -1) return false;
             }
         }
 
-        // 2) Group cells by rectId
         const groups = {};
         for (let r = 0; r < this.gridSize; r++) {
             for (let c = 0; c < this.gridSize; c++) {
@@ -300,7 +273,6 @@ class ShikakuGame {
             }
         }
 
-        // 3) Validate each group: must form a bounding rectangle and contain exactly one number equal to area
         for (const idStr in groups) {
             const id = parseInt(idStr, 10);
             const cells = groups[idStr];
@@ -313,12 +285,10 @@ class ShikakuGame {
                 maxC = Math.max(maxC, c);
             }
 
-            // Check bounding box
             const height = maxR - minR + 1;
             const width = maxC - minC + 1;
             const area = height * width;
 
-            // Ensure every cell inside bounding box belongs to this rectId
             let boundingOk = true;
             for (let r = minR; r <= maxR; r++) {
                 for (let c = minC; c <= maxC; c++) {
@@ -331,11 +301,9 @@ class ShikakuGame {
             }
 
             if (!boundingOk) {
-                // group is not a proper rectangle
                 return false;
             }
 
-            // Count numbered cells inside bounding box and verify value
             let numberCount = 0;
             let numberValue = null;
             for (let r = minR; r <= maxR; r++) {
@@ -350,7 +318,6 @@ class ShikakuGame {
             }
 
             if (!(numberCount === 1 && numberValue === area)) {
-                // This rectangle is invalid/incomplete
                 return false;
             }
         }
@@ -362,7 +329,6 @@ class ShikakuGame {
         const board = document.getElementById('gameBoard');
         board.classList.add('error');
         
-        // Show error message as toast
         const toast = document.createElement('div');
         toast.className = 'error-toast';
         toast.textContent = message;
@@ -406,16 +372,15 @@ class GameUI {
         this.dragStartRow = null;
         this.dragStartCol = null;
         this.dragColor = null;
+        this.lastStats = null;
         this.setupEventListeners();
         this.checkFirstVisit();
         this.initializeGame();
     }
 
     checkFirstVisit() {
-        // Check if user has visited before
         const hasVisited = localStorage.getItem('shikakuVisited');
         if (!hasVisited) {
-            // First visit - show tutorial
             setTimeout(() => {
                 document.getElementById('tutorialModal').classList.remove('hidden');
             }, 500);
@@ -425,15 +390,20 @@ class GameUI {
 
     setupEventListeners() {
         document.getElementById('newGameBtn').addEventListener('click', () => this.startNewGame());
-        document.getElementById('hintBtn').addEventListener('click', () => this.showHint());
+        document.getElementById('statsBtn').addEventListener('click', () => this.showStats());
         document.getElementById('helpBtn').addEventListener('click', () => this.showTutorial());
         document.getElementById('resetBtn').addEventListener('click', () => this.resetGame());
-        document.getElementById('modalBtn').addEventListener('click', () => this.startNewGame());
+        document.getElementById('modalBtn').addEventListener('click', () => this.dismissVictory());
 
-        // Close tutorial when clicking outside
         document.getElementById('tutorialModal').addEventListener('click', (e) => {
             if (e.target.id === 'tutorialModal') {
                 document.getElementById('tutorialModal').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('statsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'statsModal') {
+                document.getElementById('statsModal').classList.add('hidden');
             }
         });
 
@@ -446,7 +416,6 @@ class GameUI {
             });
         });
 
-        // Global touch events for proper drag tracking
         document.addEventListener('touchmove', (e) => this.handleDocumentTouchMove(e), { passive: false });
         document.addEventListener('touchend', (e) => this.handleDocumentTouchEnd(e));
     }
@@ -464,6 +433,8 @@ class GameUI {
         document.getElementById('moves').textContent = '0';
         document.getElementById('timer').textContent = '0:00';
         document.getElementById('modal').classList.add('hidden');
+        document.getElementById('statsModal').classList.add('hidden');
+        this.updateStatsButtonState();
         this.game.startTimer();
     }
 
@@ -485,12 +456,9 @@ class GameUI {
                     cell.textContent = number;
                 }
 
-                // Mouse events for desktop drag selection
                 cell.addEventListener('mousedown', (e) => this.handleCellMouseDown(r, c, e));
                 cell.addEventListener('mouseover', (e) => this.handleCellMouseOver(r, c, e));
                 cell.addEventListener('mouseup', (e) => this.handleCellMouseUp(r, c, e));
-
-                // Touch events for mobile
                 cell.addEventListener('touchstart', (e) => this.handleCellTouchStart(r, c, e));
 
                 board.appendChild(cell);
@@ -502,7 +470,6 @@ class GameUI {
     handleCellMouseDown(row, col, e) {
         e.preventDefault();
         
-        // If clicking on an existing rectangle, delete it
         if (this.game.userSolution[row][col] !== -1) {
             this.game.deleteRectangle(row, col);
             this.updateBoardDisplay();
@@ -536,7 +503,6 @@ class GameUI {
     handleCellTouchStart(row, col, e) {
         e.preventDefault();
         
-        // If tapping on an existing rectangle, delete it
         if (this.game.userSolution[row][col] !== -1) {
             this.game.deleteRectangle(row, col);
             this.updateBoardDisplay();
@@ -577,7 +543,6 @@ class GameUI {
     }
 
     completeRectangleFromSelection() {
-        // Check if the selection is valid
         const cells = Array.from(this.game.selectedCells).map(k => {
             const [r, c] = k.split(',').map(Number);
             return { r, c };
@@ -593,7 +558,6 @@ class GameUI {
             const width = maxCol - minCol + 1;
             const area = height * width;
             
-            // Count numbers in selection
             let numberCount = 0;
             let hasMatchingNumber = false;
             for (let r = minRow; r <= maxRow; r++) {
@@ -628,7 +592,7 @@ class GameUI {
 
             cell.classList.remove('selected', 'highlighted', 'completed', 'incomplete');
             cell.style.backgroundColor = '';
-            cell.style.opacity = '1'; // Reset opacity
+            cell.style.opacity = '1';
 
             if (this.game.userSolution[row][col] !== -1) {
                 const rectId = this.game.userSolution[row][col];
@@ -659,22 +623,25 @@ class GameUI {
         this.updateBoardDisplay();
     }
 
-    showHint() {
-        // Find next incomplete number
-        for (let r = 0; r < this.currentDifficulty; r++) {
-            for (let c = 0; c < this.currentDifficulty; c++) {
-                const num = this.game.grid[r][c];
-                if (num && this.game.userSolution[r][c] === -1) {
-                    // Found a cell with number that needs to be filled
-                    document.querySelectorAll('.cell').forEach(cell => {
-                        if (parseInt(cell.dataset.row) === r && parseInt(cell.dataset.col) === c) {
-                            cell.style.animation = 'pulse 1s infinite';
-                        }
-                    });
-                    return;
-                }
-            }
+    dismissVictory() {
+        document.getElementById('modal').classList.add('hidden');
+    }
+
+    updateStatsButtonState() {
+        const statsBtn = document.getElementById('statsBtn');
+        if (this.lastStats) {
+            statsBtn.disabled = false;
+        } else {
+            statsBtn.disabled = true;
         }
+    }
+
+    showStats() {
+        if (!this.lastStats) return;
+        
+        document.getElementById('statsTime').textContent = this.lastStats.time;
+        document.getElementById('statsMoves').textContent = this.lastStats.moves;
+        document.getElementById('statsModal').classList.remove('hidden');
     }
 
     showTutorial() {
@@ -686,13 +653,23 @@ class GameUI {
         const time = this.game.getElapsedTime();
         const minutes = Math.floor(time / 60);
         const seconds = time % 60;
+        const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-        const modal = document.getElementById('modal');
-        document.getElementById('modalStats').innerHTML = `
-            <div>Time: ${minutes}:${seconds.toString().padStart(2, '0')}</div>
-            <div>Moves: ${this.game.moves}</div>
-        `;
-        modal.classList.remove('hidden');
+        // Store stats
+        this.lastStats = {
+            time: timeStr,
+            moves: this.game.moves
+        };
+
+        // Show in victory modal
+        document.getElementById('victoryTime').textContent = timeStr;
+        document.getElementById('victoryMoves').textContent = this.game.moves;
+        
+        // Update stats button
+        this.updateStatsButtonState();
+
+        // Show victory modal
+        document.getElementById('modal').classList.remove('hidden');
     }
 }
 
