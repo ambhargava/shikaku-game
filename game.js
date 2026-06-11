@@ -200,7 +200,7 @@ class ShikakuGame {
         for (let r = minRow; r <= maxRow; r++) {
             for (let c = minCol; c <= maxCol; c++) {
                 if (this.userSolution[r][c] !== -1) {
-                    this.showError();
+                    this.showError("Rectangles cannot overlap!");
                     return false;
                 }
             }
@@ -213,15 +213,31 @@ class ShikakuGame {
         // Check if area matches any number in the rectangle (for validation)
         let hasMatchingNumber = false;
         let numberCount = 0;
+        let numberValue = null;
         for (let r = minRow; r <= maxRow; r++) {
             for (let c = minCol; c <= maxCol; c++) {
                 if (this.grid[r][c] > 0) {
                     numberCount++;
+                    numberValue = this.grid[r][c];
                     if (this.grid[r][c] === area) {
                         hasMatchingNumber = true;
                     }
                 }
             }
+        }
+        
+        // Show specific error messages
+        if (numberCount === 0) {
+            this.showError("This rectangle has no number!");
+            return false;
+        }
+        if (numberCount > 1) {
+            this.showError("A rectangle can contain only one number!");
+            return false;
+        }
+        if (!hasMatchingNumber && numberCount === 1) {
+            this.showError(`Area is ${area}, but number is ${numberValue}!`);
+            return false;
         }
         
         // Only mark as completed if valid, otherwise mark as incomplete
@@ -364,10 +380,20 @@ class ShikakuGame {
         return true;
     }
 
-    showError() {
+    showError(message = "Invalid rectangle!") {
         const board = document.getElementById('gameBoard');
         board.classList.add('error');
-        setTimeout(() => board.classList.remove('error'), 300);
+        
+        // Show error message as toast
+        const toast = document.createElement('div');
+        toast.className = 'error-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            board.classList.remove('error');
+            toast.remove();
+        }, 1500);
     }
 
     startTimer() {
@@ -403,15 +429,36 @@ class GameUI {
         this.dragStartCol = null;
         this.dragColor = null;
         this.setupEventListeners();
+        this.checkFirstVisit();
         this.initializeGame();
+    }
+
+    checkFirstVisit() {
+        // Check if user has visited before
+        const hasVisited = localStorage.getItem('shikakuVisited');
+        if (!hasVisited) {
+            // First visit - show tutorial
+            setTimeout(() => {
+                document.getElementById('tutorialModal').classList.remove('hidden');
+            }, 500);
+            localStorage.setItem('shikakuVisited', 'true');
+        }
     }
 
     setupEventListeners() {
         document.getElementById('newGameBtn').addEventListener('click', () => this.startNewGame());
         document.getElementById('undoBtn').addEventListener('click', () => this.undo());
         document.getElementById('hintBtn').addEventListener('click', () => this.showHint());
+        document.getElementById('helpBtn').addEventListener('click', () => this.showTutorial());
         document.getElementById('resetBtn').addEventListener('click', () => this.resetGame());
         document.getElementById('modalBtn').addEventListener('click', () => this.startNewGame());
+
+        // Close tutorial when clicking outside
+        document.getElementById('tutorialModal').addEventListener('click', (e) => {
+            if (e.target.id === 'tutorialModal') {
+                document.getElementById('tutorialModal').classList.add('hidden');
+            }
+        });
 
         document.querySelectorAll('.difficulty-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -658,6 +705,10 @@ class GameUI {
                 }
             }
         }
+    }
+
+    showTutorial() {
+        document.getElementById('tutorialModal').classList.remove('hidden');
     }
 
     showWinModal() {
