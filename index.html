@@ -29,7 +29,7 @@
 
             <div class="controls">
                 <button id="newGameBtn" class="btn btn-primary">New Game</button>
-                <button id="hintBtn" class="btn btn-secondary">Hint</button>
+                <button id="statsBtn" class="btn btn-secondary" disabled>📊</button>
                 <button id="helpBtn" class="btn btn-secondary">?</button>
                 <button id="resetBtn" class="btn btn-secondary">Reset</button>
             </div>
@@ -43,13 +43,40 @@
                 <button class="difficulty-btn" data-size="8">Master (8×8)</button>
             </div>
 
-            <!-- Win Modal -->
+            <!-- Victory Modal -->
             <div id="modal" class="modal hidden">
-                <div class="modal-content">
-                    <h2 id="modalTitle">Congratulations!</h2>
-                    <p id="modalMessage">You solved the puzzle!</p>
-                    <div id="modalStats"></div>
-                    <button id="modalBtn" class="btn btn-primary">Play Again</button>
+                <div class="modal-content victory-modal">
+                    <h2>🎉 Congratulations!</h2>
+                    <p>You solved the puzzle!</p>
+                    <div id="modalStats" class="victory-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">⏱️ Time:</span>
+                            <span class="stat-value" id="victoryTime">0:00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">📍 Moves:</span>
+                            <span class="stat-value" id="victoryMoves">0</span>
+                        </div>
+                    </div>
+                    <button id="modalBtn" class="btn btn-secondary btn-dismiss">Dismiss</button>
+                </div>
+            </div>
+
+            <!-- Stats Modal -->
+            <div id="statsModal" class="modal hidden">
+                <div class="modal-content stats-modal">
+                    <h2>📊 Last Game Stats</h2>
+                    <div id="statsContent" class="victory-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">⏱️ Time:</span>
+                            <span class="stat-value" id="statsTime">0:00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">📍 Moves:</span>
+                            <span class="stat-value" id="statsMoves">0</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary btn-dismiss" onclick="document.getElementById('statsModal').classList.add('hidden')">Close</button>
                 </div>
             </div>
 
