@@ -131,9 +131,37 @@ main {
     75% { transform: translateX(5px); }
 }
 
+/* Error Toast */
+.error-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #d32f2f;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
+    z-index: 999;
+    animation: slideUpToast 0.3s ease;
+}
+
+@keyframes slideUpToast {
+    from {
+        transform: translateX(-50%) translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
 .controls {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 10px;
     margin-bottom: 15px;
 }
@@ -169,6 +197,8 @@ main {
     background: #f0f0f0;
     color: #333;
     border: 2px solid #ddd;
+    padding: 10px 12px;
+    font-size: 12px;
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -244,6 +274,7 @@ main {
     z-index: 1000;
     opacity: 1;
     transition: opacity 0.3s ease;
+    overflow-y: auto;
 }
 
 .modal.hidden {
@@ -257,6 +288,8 @@ main {
     border-radius: 12px;
     text-align: center;
     animation: slideUp 0.3s ease;
+    max-width: 90%;
+    margin: 20px auto;
 }
 
 @keyframes slideUp {
@@ -287,6 +320,99 @@ main {
     border-radius: 8px;
     margin-bottom: 20px;
     font-size: 14px;
+}
+
+/* Tutorial Styles */
+.tutorial-content {
+    text-align: left;
+    max-width: 400px;
+}
+
+.tutorial-content h2 {
+    text-align: center;
+}
+
+.tutorial-rules {
+    margin: 20px 0;
+}
+
+.rule {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.rule h3 {
+    font-size: 16px;
+    color: #667eea;
+    margin-bottom: 8px;
+}
+
+.rule p {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.example {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.example-grid {
+    display: inline-flex;
+    gap: 3px;
+    padding: 8px;
+    background: #f0f0f0;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.example-grid.wrong {
+    background: #ffe0e0;
+}
+
+.example-cell {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.example-grid.wrong .example-cell {
+    background: #ffcccc;
+    border-color: #ff6666;
+}
+
+.example-label {
+    font-size: 12px;
+    color: #999;
+}
+
+.example-label.error {
+    color: #d32f2f;
+    font-weight: 600;
+}
+
+.tutorial-footer {
+    background: #f0f0ff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.tutorial-footer p {
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 12px;
 }
 
 footer {
@@ -331,16 +457,46 @@ footer {
         font-size: 12px;
     }
 
+    .btn-secondary {
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+
     .controls {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
     }
 
     .modal-content {
         padding: 20px;
+        max-width: 95%;
     }
 
     .modal-content h2 {
         font-size: 20px;
+    }
+
+    .tutorial-content {
+        max-width: 100%;
+    }
+
+    .rule {
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+    .rule h3 {
+        font-size: 14px;
+    }
+
+    .rule p {
+        font-size: 13px;
+    }
+
+    .error-toast {
+        bottom: 15px;
+        padding: 10px 16px;
+        font-size: 12px;
     }
 }
 
