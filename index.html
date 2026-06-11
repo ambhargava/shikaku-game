@@ -31,6 +31,7 @@
                 <button id="newGameBtn" class="btn btn-primary">New Game</button>
                 <button id="undoBtn" class="btn btn-secondary">Undo</button>
                 <button id="hintBtn" class="btn btn-secondary">Hint</button>
+                <button id="helpBtn" class="btn btn-secondary">?</button>
                 <button id="resetBtn" class="btn btn-secondary">Reset</button>
             </div>
 
@@ -41,12 +42,54 @@
                 <button class="difficulty-btn" data-size="6">Hard (6×6)</button>
             </div>
 
+            <!-- Win Modal -->
             <div id="modal" class="modal hidden">
                 <div class="modal-content">
                     <h2 id="modalTitle">Congratulations!</h2>
                     <p id="modalMessage">You solved the puzzle!</p>
                     <div id="modalStats"></div>
                     <button id="modalBtn" class="btn btn-primary">Play Again</button>
+                </div>
+            </div>
+
+            <!-- How to Play Modal -->
+            <div id="tutorialModal" class="modal hidden">
+                <div class="modal-content tutorial-content">
+                    <h2>How to Play</h2>
+                    <div class="tutorial-rules">
+                        <div class="rule">
+                            <h3>📝 Rule 1: Match the Numbers</h3>
+                            <p>Each number tells you the <strong>area</strong> (number of cells) of its rectangle.</p>
+                            <div class="example">
+                                <div class="example-grid">
+                                    <div class="example-cell">3</div>
+                                </div>
+                                <p class="example-label">= rectangle with 3 cells</p>
+                            </div>
+                        </div>
+
+                        <div class="rule">
+                            <h3>🎯 Rule 2: One Number Per Rectangle</h3>
+                            <p>Each rectangle must contain exactly <strong>one number</strong>.</p>
+                            <div class="example">
+                                <div class="example-grid wrong">
+                                    <div class="example-cell">2</div>
+                                    <div class="example-cell">2</div>
+                                </div>
+                                <p class="example-label error">❌ Wrong: 2 numbers</p>
+                            </div>
+                        </div>
+
+                        <div class="rule">
+                            <h3>🧩 Rule 3: Cover Everything</h3>
+                            <p>Fill the entire grid with rectangles. <strong>No gaps allowed!</strong> Rectangles cannot overlap.</p>
+                        </div>
+                    </div>
+
+                    <div class="tutorial-footer">
+                        <p><strong>💡 Tip:</strong> Drag across cells to create rectangles. Tap a colored cell to delete and start over.</p>
+                        <button class="btn btn-primary" onclick="document.getElementById('tutorialModal').classList.add('hidden')">Got it!</button>
+                    </div>
                 </div>
             </div>
         </main>
