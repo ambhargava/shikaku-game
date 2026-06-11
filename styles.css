@@ -89,8 +89,8 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800; /* increased weight for better readability */
-    font-size: 20px; /* increased size for easier reading */
+    font-weight: 800;
+    font-size: 20px;
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -161,8 +161,8 @@ main {
 
 .controls {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 8px;
     margin-bottom: 15px;
 }
 
@@ -198,7 +198,7 @@ main {
     color: #333;
     border: 2px solid #ddd;
     padding: 10px 12px;
-    font-size: 12px;
+    font-size: 16px;
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -305,21 +305,75 @@ main {
 
 .modal-content h2 {
     font-size: 24px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     color: #667eea;
 }
 
 .modal-content p {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     color: #666;
+    font-size: 14px;
 }
 
-#modalStats {
-    background: #f5f5f5;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
+/* Victory Modal Styles */
+.victory-modal {
+    max-width: 320px;
+    padding: 25px;
+}
+
+.victory-modal h2 {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.victory-stats {
+    background: linear-gradient(135deg, #f0f0ff 0%, #e8f0ff 100%);
+    padding: 20px;
+    border-radius: 10px;
+    margin: 15px 0;
+    border: 2px solid #667eea;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 16px;
+}
+
+.stat-item:not(:last-child) {
+    border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.stat-label {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+}
+
+.btn-dismiss {
+    background: white !important;
+    border: 2px solid #667eea !important;
+    color: #667eea !important;
+    text-transform: none;
+    letter-spacing: 0;
     font-size: 14px;
+    margin-top: 10px;
+}
+
+.btn-dismiss:hover:not(:disabled) {
+    background: #f0f0ff !important;
+}
+
+/* Stats Modal */
+.stats-modal {
+    max-width: 320px;
 }
 
 /* Tutorial Styles */
@@ -449,7 +503,7 @@ footer {
     }
 
     .cell {
-        font-size: 18px; /* larger on mobile for readability */
+        font-size: 18px;
     }
 
     .btn {
@@ -459,12 +513,12 @@ footer {
 
     .btn-secondary {
         padding: 8px 10px;
-        font-size: 11px;
+        font-size: 14px;
     }
 
     .controls {
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 8px;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 6px;
     }
 
     .modal-content {
@@ -474,6 +528,10 @@ footer {
 
     .modal-content h2 {
         font-size: 20px;
+    }
+
+    .victory-modal {
+        padding: 20px;
     }
 
     .tutorial-content {
